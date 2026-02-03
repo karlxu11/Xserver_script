@@ -38,6 +38,12 @@
     ```
     *   脚本默认在无头模式（后台）下运行。
     *   截图将保存在当前目录下，分别命名为成功 (`success_*.png`)、失败 (`error_*.png`) 或跳过 (`skip_*.png`)。
+    *   若需 Telegram 通知，可先设置环境变量再运行，例如：
+        ```bash
+        export TELEGRAM_BOT_TOKEN="你的 Bot Token"
+        export TELEGRAM_CHAT_ID="你的 Chat ID"
+        node win.js
+        ```
 
 ### 方法 2：GitHub Actions (Fork)
 
@@ -46,20 +52,25 @@
 2.  **配置 Secrets**：
     *   进入您 Fork 的仓库的 **Settings** > **Secrets and variables** > **Actions**。
     *   点击 **New repository secret**。
-    *   **Name**: `USERS_JSON`
-    *   **Value**: 粘贴您的 `users.json` 文件内容（建议使用压缩后的 JSON，但非必须）。
-        *   示例格式：
-            ```json
-            [{"username":"user1@example.com","password":"pass1"},{"username":"user2@example.com","password":"pass2"}]
-            ```
+    *   **必填**：
+        *   **Name**: `USERS_JSON`
+        *   **Value**: 粘贴您的 `users.json` 文件内容（建议使用压缩后的 JSON，但非必须）。
+            *   示例格式：
+                ```json
+                [{"username":"user1@example.com","password":"pass1"},{"username":"user2@example.com","password":"pass2"}]
+                ```
+    *   **可选 - Telegram 通知**（续期结果 + 截图会发到 Telegram）：
+        *   **Name**: `TELEGRAM_BOT_TOKEN`，**Value**: 你的 Telegram Bot Token（向 [@BotFather](https://t.me/BotFather) 创建机器人后获得）。
+        *   **Name**: `TELEGRAM_CHAT_ID`，**Value**: 你的 Telegram Chat ID（与 [@userinfobot](https://t.me/userinfobot) 对话可获得；群组也可用群组 ID）。
+        *   两个都配置后才会发送通知；不配置则仅保留 Actions 中的截图 Artifacts。
 
 3.  **运行 Workflow**：
     *   Workflow 计划于每 24 小时（UTC 时间 00:00）自动运行一次。
     *   您也可以在 **Actions** 标签页 > **XServer Extend Schedule** > **Run workflow** 中手动触发。
 
 4.  **查看结果**：
-    *   进入 **Actions** 标签页并点击最新的运行记录。
-    *   查看 **Artifacts** 部分以下载运行过程的截图。
+    *   若已配置 Telegram，续期结果汇总和每张截图会推送到你的 Telegram。
+    *   进入 **Actions** 标签页并点击最新的运行记录，可在 **Artifacts** 中下载运行过程的截图。
 
 ## 注意事项
 

@@ -27,6 +27,8 @@ jobs:
     - name: Run Extension Script
       env:
         USERS_JSON: ${{ secrets.USERS_JSON }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: node action.js
 
     - name: Upload Screenshots

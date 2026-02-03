@@ -2,6 +2,62 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
+/** 发送 Telegram 通知：先发汇总消息，再逐个发送截图 */
+async function sendTelegramNotification(results, screenshotDir = '.') {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!token || !chatId) {
+        console.log('Telegram 未配置 (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)，跳过通知');
+        return;
+    }
+
+    const baseUrl = `https://api.telegram.org/bot${token}`;
+
+    const lines = ['🔔 *XServer 续期结果*\n'];
+    for (const r of results) {
+        const status = r.status === 'success' ? '✅ 成功' : r.status === 'skip' ? '⏭ 跳过' : '❌ 失败';
+        let line = `• ${r.username}: ${status}`;
+        if (r.message) line += ` (${r.message})`;
+        lines.push(line);
+    }
+    const summary = lines.join('\n');
+
+    try {
+        const msgRes = await fetch(`${baseUrl}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: summary,
+                parse_mode: 'Markdown',
+            }),
+        });
+        if (!msgRes.ok) {
+            console.error('Telegram sendMessage 失败:', await msgRes.text());
+            return;
+        }
+
+        for (const r of results) {
+            if (!r.screenshotPath || !fs.existsSync(r.screenshotPath)) continue;
+            const caption = `${r.username} - ${r.status === 'success' ? '成功' : r.status === 'skip' ? '跳过' : '失败'}`;
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('caption', caption);
+            formData.append('photo', new Blob([fs.readFileSync(r.screenshotPath)]), path.basename(r.screenshotPath));
+
+            const photoRes = await fetch(`${baseUrl}/sendPhoto`, {
+                method: 'POST',
+                body: formData,
+            });
+            if (!photoRes.ok) {
+                console.error(`发送截图失败 ${r.screenshotPath}:`, await photoRes.text());
+            }
+        }
+    } catch (err) {
+        console.error('Telegram 通知异常:', err);
+    }
+}
+
 (async () => {
     // Read users.json
     const usersPath = path.join(__dirname, 'users.json');
@@ -23,6 +79,7 @@ const path = require('path');
         process.exit(1);
     }
 
+    const results = [];
     const browser = await chromium.launch({
         headless: true, // 1. Use headless browser
         channel: 'chrome',
@@ -57,7 +114,9 @@ const path = require('path');
                 await page.getByRole('link', { name: '期限を延長する' }).click();
             } catch (e) {
                 console.log(`'Extend Period' button not found for ${user.username}. Possibly unable to extend.`);
-                await page.screenshot({ path: `skip_${user.username}.png` });
+                const screenshotPath = `skip_${user.username}.png`;
+                await page.screenshot({ path: screenshotPath });
+                results.push({ username: user.username, status: 'skip', message: '无可延长期限', screenshotPath });
                 continue; // Skip to next user
             }
 
@@ -72,16 +131,25 @@ const path = require('path');
             await page.getByRole('link', { name: '戻る' }).click();
 
             console.log(`Successfully extended for ${user.username}`);
-            await page.screenshot({ path: `success_${user.username}.png` });
+            const successPath = `success_${user.username}.png`;
+            await page.screenshot({ path: successPath });
+            results.push({ username: user.username, status: 'success', message: '已延长期限', screenshotPath: successPath });
 
         } catch (error) {
             console.error(`Failed for user ${user.username}:`, error);
-            // Take a screenshot on failure
-            await page.screenshot({ path: `error_${user.username}.png` });
+            const errorPath = `error_${user.username}.png`;
+            await page.screenshot({ path: errorPath }).catch(() => {});
+            results.push({
+                username: user.username,
+                status: 'error',
+                message: (error && error.message) ? error.message : String(error),
+                screenshotPath: errorPath,
+            });
         } finally {
             await context.close();
         }
     }
 
     await browser.close();
+    await sendTelegramNotification(results);
 })();
