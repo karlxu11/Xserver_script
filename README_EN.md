@@ -50,6 +50,10 @@ This repository contains scripts to automate the extension of XServer Game VPS i
             ```json
             [{"username":"user1@example.com","password":"pass1"},{"username":"user2@example.com","password":"pass2"}]
             ```
+    *   **(Optional) Telegram Notification**:
+        *   **Name**: `TG_BOT_TOKEN` - Your Telegram Bot Token (from @BotFather).
+        *   **Name**: `TG_CHAT_ID` - Chat ID to receive notifications (User ID or Group ID).
+        *   If configured, the script will send notifications with screenshots upon completion or error.
 
 3.  **Run Workflow**:
     *   The workflow is scheduled to run automatically every 24 hours (00:00 UTC).

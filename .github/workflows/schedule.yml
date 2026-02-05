@@ -27,6 +27,8 @@ jobs:
     - name: Run Extension Script
       env:
         USERS_JSON: ${{ secrets.USERS_JSON }}
+        TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+        TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
       run: node action.js
 
     - name: Upload Screenshots

@@ -46,12 +46,17 @@
 2.  **配置 Secrets**：
     *   进入您 Fork 的仓库的 **Settings** > **Secrets and variables** > **Actions**。
     *   点击 **New repository secret**。
+
     *   **Name**: `USERS_JSON`
     *   **Value**: 粘贴您的 `users.json` 文件内容（建议使用压缩后的 JSON，但非必须）。
         *   示例格式：
             ```json
             [{"username":"user1@example.com","password":"pass1"},{"username":"user2@example.com","password":"pass2"}]
             ```
+    *   **(可选) Telegram 通知配置**：
+        *   **Name**: `TG_BOT_TOKEN` - 您的 Telegram Bot Token (从 @BotFather 获取)。
+        *   **Name**: `TG_CHAT_ID` - 接收通知的 Chat ID (用户 ID 或群组 ID)。
+        *   配置后，脚本将在运行结束或出错时发送包含截图的通知。
 
 3.  **运行 Workflow**：
     *   Workflow 计划于每 24 小时（UTC 时间 00:00）自动运行一次。
